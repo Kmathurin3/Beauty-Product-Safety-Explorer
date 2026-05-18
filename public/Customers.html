@@ -1,25 +1,95 @@
-<html>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Our Customers!</title>
-    <script src="Customers.js" defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Beauty Product Safety Explorer</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fff7fb;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1 {
+      color: #d46a92;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    input {
+      padding: 10px;
+      width: 70%;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      background-color: #d46a92;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .card {
+      background: white;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 10px;
+      box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+    }
+
+    canvas {
+      margin-top: 30px;
+    }
+
+    nav {
+      margin-bottom: 20px;
+    }
+
+    nav a {
+      margin-right: 15px;
+      text-decoration: none;
+      color: #d46a92;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
-    <h1>Our Customers!</h1>
-    <form onsubmit="createCustomer(); return false;">
-        <label for="firstName">First Name:</label>
-        <input type="text" id="firstName">
-        <br>
-        <label for="lastName">Last Name:</label>
-        <input type="text" id="lastName">
-        <br>
-        <label for="state">State:</label>
-        <input type="text" id="state">
-        <br>
-        <br>
-        <input type="submit" name="Add Customer">
-    </form>
-</body>
+  <div class="container">
 
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">About</a>
+      <a href="#">Help</a>
+    </nav>
+
+    <h1>Beauty Product Safety Explorer</h1>
+
+    <p>
+      Search beauty and skincare product reactions using openFDA cosmetic adverse event data.
+    </p>
+
+    <input type="text" id="searchInput" placeholder="Search a product..." />
+    <button onclick="searchFDA()">Search</button>
+
+    <div id="results"></div>
+
+    <canvas id="reactionChart"></canvas>
+
+  </div>
+
+  <script src="Customers.js"></script>
+</body>
 </html>
