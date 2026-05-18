@@ -1,7 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const supabaseClient = require('@supabase/supabase-js');
-const { isValidStateAbbreviation } = require('usa-state-validator');
 const dotenv = require('dotenv');
 
 const app = express();
@@ -16,56 +15,57 @@ const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = supabaseClient.createClient(supabaseUrl, supabaseKey);
 
 app.get('/', (req, res) => {
-  res.sendFile('public/Customers.html', { root: __dirname });
+  res.sendFile('public/index.html', { root: __dirname });
 });
 
-app.get('/customers', async (req, res) => {
-  console.log('Attempting to get all customers!');
-
-  const { data, error } = await supabase.from('customer').select();
+// Gets saved searches from Supabase
+app.get('/saved-searches', async (req, res) => {
+  const { data, error } = await supabase.from('saved_searches').select();
 
   if (error) {
-    console.log(`Error: ${error}`);
-    res.statusCode = 500;
-    res.send(error);
+    res.status(500).send(error);
   } else {
-    console.log('Recieved Data:', data.length);
     res.json(data);
   }
 });
 
-app.post('/customer', async (req, res) => {
-  console.log('Adding Customer');
-  console.log(`Request: ${JSON.stringify(req.body)}`);
+// Saves a search to Supabase
+app.post('/saved-search', async (req, res) => {
+  const searchTerm = req.body.searchTerm;
 
-  const firstName = req.body.firstName;
-  const lastName = req.body.lastName;
-  const state = req.body.state;
-
-  if (!isValidStateAbbreviation(state)) {
-    console.log(`State: ${state} is invalid`);
-    res.statusCode = 400;
-    res.json({
-      message: `${state} is not a valid 2 Letter Abbreviation for State`,
-    });
+  if (!searchTerm) {
+    res.status(400).json({ message: 'Search term is required' });
     return;
   }
 
   const { data, error } = await supabase
-    .from('customer')
+    .from('saved_searches')
     .insert({
-      customer_first_name: firstName,
-      customer_last_name: lastName,
-      customer_state: state,
+      search_term: searchTerm,
     })
     .select();
 
   if (error) {
-    console.log(`Error: ${error}`);
-    res.statusCode = 500;
-    res.send(error);
+    res.status(500).send(error);
   } else {
     res.json(data);
+  }
+});
+
+// Gets cosmetic adverse event data from openFDA
+app.get('/api/fda', async (req, res) => {
+  const search = req.query.search || 'skin';
+  const url = `https://api.fda.gov/cosmetic/event.json?search=products.product_name:${search}&limit=10`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error getting FDA data',
+      error: error.message,
+    });
   }
 });
 
