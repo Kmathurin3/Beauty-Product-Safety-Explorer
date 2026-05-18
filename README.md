@@ -17,4 +17,4 @@ PASTE YOUR VERCEL LINK HERE
 
 See the developer manual here:
 
-[Developer Manual](docs/developermanual.md)
+[Developer Manual](docs/developer-manual.md)
