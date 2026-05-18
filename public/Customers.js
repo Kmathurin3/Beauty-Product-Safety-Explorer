@@ -1,63 +1,39 @@
-async function searchFDA() {
-  const searchInput = document.getElementById('searchInput').value;
+const express = require('express');
+const bodyParser = require('body-parser');
+const dotenv = require('dotenv');
 
-  const resultsDiv = document.getElementById('results');
+const app = express();
+const port = 3000;
 
-  resultsDiv.innerHTML = '<p>Loading...</p>';
+dotenv.config();
+
+app.use(bodyParser.json());
+app.use(express.static(__dirname + '/public'));
+
+app.get('/', (req, res) => {
+  res.sendFile('public/Customers.html', { root: __dirname });
+});
+
+// FDA API Route
+app.get('/api/fda', async (req, res) => {
+  const search = req.query.search || 'skin';
+
+  const url = `https://api.fda.gov/cosmetic/event.json?search=products.product_name:${search}&limit=10`;
 
   try {
-    const response = await fetch(`/api/fda?search=${searchInput}`);
+    const response = await fetch(url);
 
     const data = await response.json();
 
-    resultsDiv.innerHTML = '';
-
-    const reactions = {};
-
-    if (data.results) {
-      data.results.forEach((report) => {
-        const product =
-          report.products && report.products[0]
-            ? report.products[0].product_name
-            : 'Unknown Product';
-
-        const reaction =
-          report.reactions && report.reactions[0]
-            ? report.reactions[0]
-            : 'Unknown Reaction';
-
-        reactions[reaction] = (reactions[reaction] || 0) + 1;
-
-        resultsDiv.innerHTML += `
-          <div class="card">
-            <h3>${product}</h3>
-            <p><strong>Reaction:</strong> ${reaction}</p>
-          </div>
-        `;
-      });
-
-      createChart(reactions);
-    } else {
-      resultsDiv.innerHTML = '<p>No results found.</p>';
-    }
+    res.json(data);
   } catch (error) {
-    resultsDiv.innerHTML = '<p>Error loading data.</p>';
+    res.status(500).json({
+      message: 'Error retrieving FDA data',
+      error: error.message,
+    });
   }
-}
+});
 
-function createChart(reactions) {
-  const ctx = document.getElementById('reactionChart');
-
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(reactions),
-      datasets: [
-        {
-          label: 'Reported Reactions',
-          data: Object.values(reactions),
-        },
-      ],
-    },
-  });
-}
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
