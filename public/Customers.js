@@ -1,39 +1,61 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const dotenv = require('dotenv');
+async function searchFDA() {
+  const searchInput = document.getElementById('searchInput').value || 'skin';
+  const resultsDiv = document.getElementById('results');
 
-const app = express();
-const port = 3000;
-
-dotenv.config();
-
-app.use(bodyParser.json());
-app.use(express.static(__dirname + '/public'));
-
-app.get('/', (req, res) => {
-  res.sendFile('public/Customers.html', { root: __dirname });
-});
-
-// FDA API Route
-app.get('/api/fda', async (req, res) => {
-  const search = req.query.search || 'skin';
-
-  const url = `https://api.fda.gov/cosmetic/event.json?search=products.product_name:${search}&limit=10`;
+  resultsDiv.innerHTML = '<p>Loading...</p>';
 
   try {
-    const response = await fetch(url);
-
+    const response = await fetch(`/api/fda?search=${searchInput}`);
     const data = await response.json();
 
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({
-      message: 'Error retrieving FDA data',
-      error: error.message,
-    });
-  }
-});
+    resultsDiv.innerHTML = '';
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+    const reactions = {};
+
+    if (data.results) {
+      data.results.forEach((report) => {
+        const product =
+          report.products && report.products[0]
+            ? report.products[0].product_name
+            : 'Unknown Product';
+
+        const reaction =
+          report.reactions && report.reactions[0]
+            ? report.reactions[0]
+            : 'Unknown Reaction';
+
+        reactions[reaction] = (reactions[reaction] || 0) + 1;
+
+        resultsDiv.innerHTML += `
+          <div class="card">
+            <h3>${product}</h3>
+            <p><strong>Reaction:</strong> ${reaction}</p>
+          </div>
+        `;
+      });
+
+      createChart(reactions);
+    } else {
+      resultsDiv.innerHTML = '<p>No results found. Try searching another product.</p>';
+    }
+  } catch (error) {
+    resultsDiv.innerHTML = '<p>Error loading data. Please try again.</p>';
+  }
+}
+
+function createChart(reactions) {
+  const ctx = document.getElementById('reactionChart');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(reactions),
+      datasets: [
+        {
+          label: 'Reported Reactions',
+          data: Object.values(reactions),
+        },
+      ],
+    },
+  });
+}
