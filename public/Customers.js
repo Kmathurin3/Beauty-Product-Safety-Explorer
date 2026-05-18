@@ -1,69 +1,63 @@
-async function createCustomer() {
-  await fetch(`/customer`, {
-    method: 'POST',
-    body: JSON.stringify({
-      firstName: `${document.getElementById('firstName').value}`,
-      lastName: `${document.getElementById('lastName').value}`,
-      state: `${document.getElementById('state').value}`,
-    }),
-    headers: {
-      'content-type': 'application/json',
-    },
-  }).then((result) => result.json());
+async function searchFDA() {
+  const searchInput = document.getElementById('searchInput').value;
 
-  await loadCustomerData();
-}
+  const resultsDiv = document.getElementById('results');
 
-async function loadCustomerData() {
-  await fetch('/customers')
-    .then((result) => result.json())
-    .then((resultJson) => {
-      console.log(resultJson);
-      const table = document.createElement('table');
-      table.setAttribute('id', 'customerInfo');
-      // Setting up table Heading Row
-      const tableRow = document.createElement('tr');
+  resultsDiv.innerHTML = '<p>Loading...</p>';
 
-      const tableHeadingFirstName = document.createElement('th');
-      tableHeadingFirstName.innerHTML = 'First Name';
+  try {
+    const response = await fetch(`/api/fda?search=${searchInput}`);
 
-      const tableHeadingLastName = document.createElement('th');
-      tableHeadingLastName.innerHTML = 'Last Name';
+    const data = await response.json();
 
-      const tableHeadingState = document.createElement('th');
-      tableHeadingState.innerHTML = 'State';
+    resultsDiv.innerHTML = '';
 
-      tableRow.appendChild(tableHeadingFirstName);
-      tableRow.appendChild(tableHeadingLastName);
-      tableRow.appendChild(tableHeadingState);
+    const reactions = {};
 
-      table.appendChild(tableRow);
+    if (data.results) {
+      data.results.forEach((report) => {
+        const product =
+          report.products && report.products[0]
+            ? report.products[0].product_name
+            : 'Unknown Product';
 
-      // Adding Data to table
-      resultJson.forEach((customer) => {
-        const customerTableRow = document.createElement('tr');
-        const customerTableFirstName = document.createElement('td');
-        const customerTableLastName = document.createElement('td');
-        const customerTableState = document.createElement('td');
+        const reaction =
+          report.reactions && report.reactions[0]
+            ? report.reactions[0]
+            : 'Unknown Reaction';
 
-        customerTableFirstName.innerHTML = customer['customer_first_name'];
-        customerTableLastName.innerHTML = customer['customer_last_name'];
-        customerTableState.innerHTML = customer['customer_state'];
+        reactions[reaction] = (reactions[reaction] || 0) + 1;
 
-        customerTableRow.appendChild(customerTableFirstName);
-        customerTableRow.appendChild(customerTableLastName);
-        customerTableRow.appendChild(customerTableState);
-
-        table.appendChild(customerTableRow);
+        resultsDiv.innerHTML += `
+          <div class="card">
+            <h3>${product}</h3>
+            <p><strong>Reaction:</strong> ${reaction}</p>
+          </div>
+        `;
       });
 
-      const preExistingTable = document.getElementById('customerInfo');
-      if (preExistingTable) {
-        preExistingTable.remove();
-      }
-
-      document.body.appendChild(table);
-    });
+      createChart(reactions);
+    } else {
+      resultsDiv.innerHTML = '<p>No results found.</p>';
+    }
+  } catch (error) {
+    resultsDiv.innerHTML = '<p>Error loading data.</p>';
+  }
 }
 
-window.onload = loadCustomerData;
+function createChart(reactions) {
+  const ctx = document.getElementById('reactionChart');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(reactions),
+      datasets: [
+        {
+          label: 'Reported Reactions',
+          data: Object.values(reactions),
+        },
+      ],
+    },
+  });
+}
